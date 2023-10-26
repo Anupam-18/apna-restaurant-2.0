@@ -27,7 +27,6 @@ func (ac *AuthController) SignUpUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
-	fmt.Println(credentials)
 	if resp, ok := utils.ValidateUserRegisterOrLogin(credentials, ""); !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": resp})
 		return

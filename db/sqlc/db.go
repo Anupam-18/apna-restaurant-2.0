@@ -24,14 +24,38 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.checkExistingMenuitemStmt, err = db.PrepareContext(ctx, checkExistingMenuitem); err != nil {
+		return nil, fmt.Errorf("error preparing query CheckExistingMenuitem: %w", err)
+	}
 	if q.checkExistingUserStmt, err = db.PrepareContext(ctx, checkExistingUser); err != nil {
 		return nil, fmt.Errorf("error preparing query CheckExistingUser: %w", err)
+	}
+	if q.createMenuStmt, err = db.PrepareContext(ctx, createMenu); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateMenu: %w", err)
+	}
+	if q.createMenuitemStmt, err = db.PrepareContext(ctx, createMenuitem); err != nil {
+		return nil, fmt.Errorf("error preparing query CreateMenuitem: %w", err)
 	}
 	if q.createUserStmt, err = db.PrepareContext(ctx, createUser); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateUser: %w", err)
 	}
+	if q.deleteMenuByIDStmt, err = db.PrepareContext(ctx, deleteMenuByID); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteMenuByID: %w", err)
+	}
+	if q.deleteMenuitemStmt, err = db.PrepareContext(ctx, deleteMenuitem); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteMenuitem: %w", err)
+	}
 	if q.deleteUserStmt, err = db.PrepareContext(ctx, deleteUser); err != nil {
 		return nil, fmt.Errorf("error preparing query DeleteUser: %w", err)
+	}
+	if q.getAllMenusStmt, err = db.PrepareContext(ctx, getAllMenus); err != nil {
+		return nil, fmt.Errorf("error preparing query GetAllMenus: %w", err)
+	}
+	if q.getMenuByIDStmt, err = db.PrepareContext(ctx, getMenuByID); err != nil {
+		return nil, fmt.Errorf("error preparing query GetMenuByID: %w", err)
+	}
+	if q.getMenuitemsByIdStmt, err = db.PrepareContext(ctx, getMenuitemsById); err != nil {
+		return nil, fmt.Errorf("error preparing query GetMenuitemsById: %w", err)
 	}
 	if q.getUserByEmailStmt, err = db.PrepareContext(ctx, getUserByEmail); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserByEmail: %w", err)
@@ -39,8 +63,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.getUserByIdStmt, err = db.PrepareContext(ctx, getUserById); err != nil {
 		return nil, fmt.Errorf("error preparing query GetUserById: %w", err)
 	}
+	if q.listMenuitemsStmt, err = db.PrepareContext(ctx, listMenuitems); err != nil {
+		return nil, fmt.Errorf("error preparing query ListMenuitems: %w", err)
+	}
 	if q.listUsersStmt, err = db.PrepareContext(ctx, listUsers); err != nil {
 		return nil, fmt.Errorf("error preparing query ListUsers: %w", err)
+	}
+	if q.updateMenuStmt, err = db.PrepareContext(ctx, updateMenu); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateMenu: %w", err)
+	}
+	if q.updateMenuitemStmt, err = db.PrepareContext(ctx, updateMenuitem); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateMenuitem: %w", err)
 	}
 	if q.updateUserStmt, err = db.PrepareContext(ctx, updateUser); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateUser: %w", err)
@@ -50,9 +83,24 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.checkExistingMenuitemStmt != nil {
+		if cerr := q.checkExistingMenuitemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing checkExistingMenuitemStmt: %w", cerr)
+		}
+	}
 	if q.checkExistingUserStmt != nil {
 		if cerr := q.checkExistingUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing checkExistingUserStmt: %w", cerr)
+		}
+	}
+	if q.createMenuStmt != nil {
+		if cerr := q.createMenuStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createMenuStmt: %w", cerr)
+		}
+	}
+	if q.createMenuitemStmt != nil {
+		if cerr := q.createMenuitemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing createMenuitemStmt: %w", cerr)
 		}
 	}
 	if q.createUserStmt != nil {
@@ -60,9 +108,34 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createUserStmt: %w", cerr)
 		}
 	}
+	if q.deleteMenuByIDStmt != nil {
+		if cerr := q.deleteMenuByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteMenuByIDStmt: %w", cerr)
+		}
+	}
+	if q.deleteMenuitemStmt != nil {
+		if cerr := q.deleteMenuitemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteMenuitemStmt: %w", cerr)
+		}
+	}
 	if q.deleteUserStmt != nil {
 		if cerr := q.deleteUserStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing deleteUserStmt: %w", cerr)
+		}
+	}
+	if q.getAllMenusStmt != nil {
+		if cerr := q.getAllMenusStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getAllMenusStmt: %w", cerr)
+		}
+	}
+	if q.getMenuByIDStmt != nil {
+		if cerr := q.getMenuByIDStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getMenuByIDStmt: %w", cerr)
+		}
+	}
+	if q.getMenuitemsByIdStmt != nil {
+		if cerr := q.getMenuitemsByIdStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getMenuitemsByIdStmt: %w", cerr)
 		}
 	}
 	if q.getUserByEmailStmt != nil {
@@ -75,9 +148,24 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing getUserByIdStmt: %w", cerr)
 		}
 	}
+	if q.listMenuitemsStmt != nil {
+		if cerr := q.listMenuitemsStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing listMenuitemsStmt: %w", cerr)
+		}
+	}
 	if q.listUsersStmt != nil {
 		if cerr := q.listUsersStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listUsersStmt: %w", cerr)
+		}
+	}
+	if q.updateMenuStmt != nil {
+		if cerr := q.updateMenuStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateMenuStmt: %w", cerr)
+		}
+	}
+	if q.updateMenuitemStmt != nil {
+		if cerr := q.updateMenuitemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateMenuitemStmt: %w", cerr)
 		}
 	}
 	if q.updateUserStmt != nil {
@@ -122,27 +210,49 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                    DBTX
-	tx                    *sql.Tx
-	checkExistingUserStmt *sql.Stmt
-	createUserStmt        *sql.Stmt
-	deleteUserStmt        *sql.Stmt
-	getUserByEmailStmt    *sql.Stmt
-	getUserByIdStmt       *sql.Stmt
-	listUsersStmt         *sql.Stmt
-	updateUserStmt        *sql.Stmt
+	db                        DBTX
+	tx                        *sql.Tx
+	checkExistingMenuitemStmt *sql.Stmt
+	checkExistingUserStmt     *sql.Stmt
+	createMenuStmt            *sql.Stmt
+	createMenuitemStmt        *sql.Stmt
+	createUserStmt            *sql.Stmt
+	deleteMenuByIDStmt        *sql.Stmt
+	deleteMenuitemStmt        *sql.Stmt
+	deleteUserStmt            *sql.Stmt
+	getAllMenusStmt           *sql.Stmt
+	getMenuByIDStmt           *sql.Stmt
+	getMenuitemsByIdStmt      *sql.Stmt
+	getUserByEmailStmt        *sql.Stmt
+	getUserByIdStmt           *sql.Stmt
+	listMenuitemsStmt         *sql.Stmt
+	listUsersStmt             *sql.Stmt
+	updateMenuStmt            *sql.Stmt
+	updateMenuitemStmt        *sql.Stmt
+	updateUserStmt            *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                    tx,
-		tx:                    tx,
-		checkExistingUserStmt: q.checkExistingUserStmt,
-		createUserStmt:        q.createUserStmt,
-		deleteUserStmt:        q.deleteUserStmt,
-		getUserByEmailStmt:    q.getUserByEmailStmt,
-		getUserByIdStmt:       q.getUserByIdStmt,
-		listUsersStmt:         q.listUsersStmt,
-		updateUserStmt:        q.updateUserStmt,
+		db:                        tx,
+		tx:                        tx,
+		checkExistingMenuitemStmt: q.checkExistingMenuitemStmt,
+		checkExistingUserStmt:     q.checkExistingUserStmt,
+		createMenuStmt:            q.createMenuStmt,
+		createMenuitemStmt:        q.createMenuitemStmt,
+		createUserStmt:            q.createUserStmt,
+		deleteMenuByIDStmt:        q.deleteMenuByIDStmt,
+		deleteMenuitemStmt:        q.deleteMenuitemStmt,
+		deleteUserStmt:            q.deleteUserStmt,
+		getAllMenusStmt:           q.getAllMenusStmt,
+		getMenuByIDStmt:           q.getMenuByIDStmt,
+		getMenuitemsByIdStmt:      q.getMenuitemsByIdStmt,
+		getUserByEmailStmt:        q.getUserByEmailStmt,
+		getUserByIdStmt:           q.getUserByIdStmt,
+		listMenuitemsStmt:         q.listMenuitemsStmt,
+		listUsersStmt:             q.listUsersStmt,
+		updateMenuStmt:            q.updateMenuStmt,
+		updateMenuitemStmt:        q.updateMenuitemStmt,
+		updateUserStmt:            q.updateUserStmt,
 	}
 }

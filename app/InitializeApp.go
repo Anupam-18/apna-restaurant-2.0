@@ -29,6 +29,8 @@ func StartApplication() {
 	queries := repo.New(db)
 	AuthController := controllers.NewAuthController(queries)
 	AuthRoutes := routes.NewAuthRoutes(AuthController, router)
-	mapUrls(AuthRoutes)
+	MenuController := controllers.NewMenuController(queries)
+	MenuRoutes := routes.NewMenuRoutes(MenuController, router)
+	mapUrls(AuthRoutes, MenuRoutes)
 	router.Run(":8080")
 }

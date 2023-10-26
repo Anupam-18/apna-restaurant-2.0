@@ -10,6 +10,20 @@ import (
 	"github.com/google/uuid"
 )
 
+type Menu struct {
+	ID          uuid.UUID   `json:"id"`
+	Category    string      `json:"category"`
+	MenuItemIds []uuid.UUID `json:"menu_item_ids"`
+}
+
+type Menuitem struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Price    int32     `json:"price"`
+	ImageUrl string    `json:"image_url"`
+	MenuID   uuid.UUID `json:"menu_id"`
+}
+
 type User struct {
 	ID          uuid.UUID `json:"id"`
 	Email       string    `json:"email"`
