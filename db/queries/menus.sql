@@ -42,6 +42,11 @@ SELECT id, category, menu_item_ids
 FROM menus
 WHERE id = $1;
 
+-- name: CheckExistingMenu :one
+SELECT COUNT(*) AS menu_count
+FROM menus
+WHERE id = $1;
+
 -- name: DeleteMenuByID :exec
 -- param: id: uuid
 DELETE FROM menus

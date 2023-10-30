@@ -17,9 +17,9 @@ type Token struct {
 }
 
 func ValidateUserRegisterOrLogin(user *repo.User, flag string) (string, bool) {
-	if len(strings.TrimSpace(user.Name)) == 0 {
+	if len(strings.TrimSpace(user.Name)) == 0 && flag != "login" {
 		return "Name required", false
-	} else if len(strings.TrimSpace(user.Name)) < 4 {
+	} else if len(strings.TrimSpace(user.Name)) < 4 && flag != "login" {
 		return "Name should be at least 3 chars", false
 	} else if len(strings.TrimSpace(user.Email)) == 0 {
 		return "Email required", false

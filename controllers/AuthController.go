@@ -62,7 +62,6 @@ func (ac *AuthController) SignUpUser(c *gin.Context) {
 }
 
 func (ac *AuthController) SignInUser(c *gin.Context) {
-	fmt.Println("hello bro")
 	var credentials *repo.User
 	response := make(map[string]interface{})
 
@@ -102,11 +101,5 @@ func (ac *AuthController) SignInUser(c *gin.Context) {
 		"token": token,
 	}
 	response["data"] = data
-	c.JSON(http.StatusCreated, response)
+	c.JSON(http.StatusOK, response)
 }
-
-// export POSTGRESQL_URL='postgres://anupam:mailpass@localhost:5432/postgres?sslmode=disable'
-// migrate -database ${POSTGRESQL_URL} -path ./pg/migrations up
-// export PATH="$PATH:$(go env GOPATH)/bin"
-// go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-// sqlc generate -f ./pg/sqlc.yaml

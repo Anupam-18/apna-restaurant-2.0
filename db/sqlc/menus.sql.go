@@ -12,6 +12,19 @@ import (
 	"github.com/lib/pq"
 )
 
+const checkExistingMenu = `-- name: CheckExistingMenu :one
+SELECT COUNT(*) AS menu_count
+FROM menus
+WHERE id = $1
+`
+
+func (q *Queries) CheckExistingMenu(ctx context.Context, id uuid.UUID) (int64, error) {
+	row := q.queryRow(ctx, q.checkExistingMenuStmt, checkExistingMenu, id)
+	var menu_count int64
+	err := row.Scan(&menu_count)
+	return menu_count, err
+}
+
 const checkExistingMenuitem = `-- name: CheckExistingMenuitem :one
 SELECT COUNT(*) AS menuitem_count
 FROM menuitems

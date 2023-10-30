@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"reflect"
 
 	repo "apna-restaurant-2.0/db/sqlc"
 	"apna-restaurant-2.0/utils"
@@ -28,13 +30,17 @@ func (mc *MenuController) AddMenu(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": resp})
 		return
 	}
+	arrType := reflect.TypeOf(menuReqBody.MenuItemIds)
+	fmt.Println(arrType)
 	menu := &repo.CreateMenuParams{
 		Category:    menuReqBody.Category,
-		MenuItemIds: []uuid.UUID{},
+		MenuItemIds: menuReqBody.MenuItemIds,
 	}
+	fmt.Println(menu)
 	insertedMenu, err := mc.db.CreateMenu(context.Background(), *menu)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while"})
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while inserting menu in db"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"message": "menu created", "data": insertedMenu})
@@ -92,17 +98,90 @@ func (mc *MenuController) GetMenuByID(c *gin.Context) {
 }
 
 func (mc *MenuController) AddMenuItem(c *gin.Context) {
-
+	var menuitemReqBody *repo.Menuitem
+	if err := c.ShouldBindJSON(&menuitemReqBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	if resp, ok := utils.ValidateAddMenuitemRequest(menuitemReqBody, mc.db); !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": resp})
+		return
+	}
+	menuitem := &repo.CreateMenuitemParams{
+		Name:     menuitemReqBody.Name,
+		Price:    menuitemReqBody.Price,
+		ImageUrl: menuitemReqBody.ImageUrl,
+		MenuID:   menuitemReqBody.MenuID,
+	}
+	createdMenuitem, err := mc.db.CreateMenuitem(context.Background(), *menuitem)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "Menuitem added", "data": createdMenuitem})
 }
 
 func (mc *MenuController) GetAllMenuItems(c *gin.Context) {
-
+	allMenuitems, err := mc.db.ListMenuitems(context.Background())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"menus": allMenuitems})
 }
 
 func (mc *MenuController) GetMenuitemByID(c *gin.Context) {
-
+	menuitemId := c.Param("id")
+	parsedId, err := uuid.Parse(menuitemId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid menuitemId"})
+		return
+	}
+	if resp, ok := utils.ValidateMenuItem(parsedId, mc.db); !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": resp})
+	}
+	requiredMenu, err := mc.db.GetMenuitemsById(context.Background(), parsedId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"menu": requiredMenu})
 }
 
 func (mc *MenuController) UpdateMenuitem(c *gin.Context) {
-
+	var menuitemReqBody *repo.Menuitem
+	if err := c.ShouldBindJSON(&menuitemReqBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	if resp, ok := utils.ValidateUpdateMenuItemRequest(menuitemReqBody, mc.db); !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": resp})
+		return
+	}
+	existingMenuitem, err := mc.db.GetMenuitemsById(context.Background(), menuitemReqBody.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	if menuitemReqBody.Name == "" {
+		menuitemReqBody.Name = existingMenuitem.Name
+	}
+	if menuitemReqBody.Price == 0 {
+		menuitemReqBody.Price = existingMenuitem.Price
+	}
+	if menuitemReqBody.ImageUrl == "" {
+		menuitemReqBody.ImageUrl = existingMenuitem.ImageUrl
+	}
+	menuitem := &repo.UpdateMenuitemParams{
+		ID:       menuitemReqBody.ID,
+		Name:     menuitemReqBody.Name,
+		Price:    menuitemReqBody.Price,
+		ImageUrl: menuitemReqBody.ImageUrl,
+	}
+	updatedMenuitem, err := mc.db.UpdateMenuitem(context.Background(), *menuitem)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Menuitem updated", "data": updatedMenuitem})
 }

@@ -1,13 +1,13 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE menus (
+CREATE TABLE IF NOT EXISTS menus (
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "category" VARCHAR NOT NULL,
-    "menu_item_ids" UUID[],
+    "menu_item_ids" UUID[] DEFAULT '{}'::UUID[] NOT NULL,
     CONSTRAINT "unique_menu_category" UNIQUE ("category")
 );
 
-CREATE TABLE menuitems (
+CREATE TABLE IF NOT EXISTS menuitems(
     "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "name" VARCHAR NOT NULL,
     "price" INT NOT NULL,

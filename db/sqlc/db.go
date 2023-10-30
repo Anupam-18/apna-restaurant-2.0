@@ -24,6 +24,9 @@ func New(db DBTX) *Queries {
 func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	q := Queries{db: db}
 	var err error
+	if q.checkExistingMenuStmt, err = db.PrepareContext(ctx, checkExistingMenu); err != nil {
+		return nil, fmt.Errorf("error preparing query CheckExistingMenu: %w", err)
+	}
 	if q.checkExistingMenuitemStmt, err = db.PrepareContext(ctx, checkExistingMenuitem); err != nil {
 		return nil, fmt.Errorf("error preparing query CheckExistingMenuitem: %w", err)
 	}
@@ -83,6 +86,11 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 
 func (q *Queries) Close() error {
 	var err error
+	if q.checkExistingMenuStmt != nil {
+		if cerr := q.checkExistingMenuStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing checkExistingMenuStmt: %w", cerr)
+		}
+	}
 	if q.checkExistingMenuitemStmt != nil {
 		if cerr := q.checkExistingMenuitemStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing checkExistingMenuitemStmt: %w", cerr)
@@ -212,6 +220,7 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 type Queries struct {
 	db                        DBTX
 	tx                        *sql.Tx
+	checkExistingMenuStmt     *sql.Stmt
 	checkExistingMenuitemStmt *sql.Stmt
 	checkExistingUserStmt     *sql.Stmt
 	createMenuStmt            *sql.Stmt
@@ -236,6 +245,7 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
 		db:                        tx,
 		tx:                        tx,
+		checkExistingMenuStmt:     q.checkExistingMenuStmt,
 		checkExistingMenuitemStmt: q.checkExistingMenuitemStmt,
 		checkExistingUserStmt:     q.checkExistingUserStmt,
 		createMenuStmt:            q.createMenuStmt,
