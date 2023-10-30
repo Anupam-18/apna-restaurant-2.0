@@ -12,7 +12,7 @@ WITH inserted AS (
     INSERT INTO menus (category, menu_item_ids)
     VALUES (
         $1,
-        (SELECT ARRAY[$2])
+        (SELECT ARRAY[$2::UUID])
     )
     RETURNING id
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
+	"strings"
 
 	repo "apna-restaurant-2.0/db/sqlc"
 	"apna-restaurant-2.0/utils"
@@ -26,12 +26,10 @@ func (mc *MenuController) AddMenu(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
-	if resp, ok := utils.ValidateAddMenuRequest(menuReqBody, mc.db); !ok {
+	if resp, ok := utils.ValidateAddMenuRequest(menuReqBody, mc.db, ""); !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": resp})
 		return
 	}
-	arrType := reflect.TypeOf(menuReqBody.MenuItemIds)
-	fmt.Println(arrType)
 	menu := &repo.CreateMenuParams{
 		Category:    menuReqBody.Category,
 		MenuItemIds: menuReqBody.MenuItemIds,
@@ -48,13 +46,25 @@ func (mc *MenuController) AddMenu(c *gin.Context) {
 
 func (mc *MenuController) UpdateMenu(c *gin.Context) {
 	var menuReqBody *repo.Menu
-	if err := c.ShouldBindJSON(menuReqBody); err != nil {
+	if err := c.ShouldBindJSON(&menuReqBody); err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
-	if resp, ok := utils.ValidateAddMenuRequest(menuReqBody, mc.db); !ok {
+	if resp, ok := utils.ValidateAddMenuRequest(menuReqBody, mc.db, "update"); !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": resp})
 		return
+	}
+	existingMenu, err := mc.db.GetMenuByID(context.Background(), menuReqBody.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	if len(strings.TrimSpace(menuReqBody.Category)) == 0 {
+		menuReqBody.Category = existingMenu.Category
+	}
+	if len(menuReqBody.MenuItemIds) == 0 {
+		menuReqBody.MenuItemIds = existingMenu.MenuItemIds
 	}
 	menu := &repo.UpdateMenuParams{
 		Category:    menuReqBody.Category,
@@ -86,8 +96,9 @@ func (mc *MenuController) GetMenuByID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid menuId"})
 		return
 	}
-	if resp, ok := utils.ValidateMenuItem(parsedId, mc.db); !ok {
+	if resp, ok := utils.ValidateMenu(parsedId, mc.db); !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": resp})
+		return
 	}
 	requiredMenu, err := mc.db.GetMenuByID(context.Background(), parsedId)
 	if err != nil {
@@ -100,6 +111,7 @@ func (mc *MenuController) GetMenuByID(c *gin.Context) {
 func (mc *MenuController) AddMenuItem(c *gin.Context) {
 	var menuitemReqBody *repo.Menuitem
 	if err := c.ShouldBindJSON(&menuitemReqBody); err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -127,7 +139,7 @@ func (mc *MenuController) GetAllMenuItems(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"menus": allMenuitems})
+	c.JSON(http.StatusOK, gin.H{"menusitems": allMenuitems})
 }
 
 func (mc *MenuController) GetMenuitemByID(c *gin.Context) {
@@ -145,7 +157,7 @@ func (mc *MenuController) GetMenuitemByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"menu": requiredMenu})
+	c.JSON(http.StatusOK, gin.H{"menuitem": requiredMenu})
 }
 
 func (mc *MenuController) UpdateMenuitem(c *gin.Context) {
