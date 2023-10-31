@@ -24,10 +24,11 @@ func ValidateAddMenuRequest(menu *repo.Menu, db *repo.Queries, flag string) (str
 		return "Category required", false
 	} else if len(strings.TrimSpace(menu.Category)) < 5 && flag != "update" {
 		return "Name should be at least 5 chars", false
+	} else if !IsValidUUID(menu.ID) {
+		return "Missing/Invalid id", false
 	} else if resp, ok := ValidateMenu(menu.ID, db); !ok {
 		return resp, false
 	}
-
 	if (len(menu.MenuItemIds)) > 0 {
 		for _, menuitem := range menu.MenuItemIds {
 			if resp, ok := ValidateMenuItem(menuitem, db); !ok {

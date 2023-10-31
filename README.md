@@ -24,7 +24,8 @@ App is built using
 
 - The service provides the APIs for registration and login
 - Enabled a way to authorize the user for subsequent calls using JWT 
-- Adding More features
+- Provided facility to add menus and respective menuitems and perform all sort of crud on these entities
+
 
 
 ### Launch
