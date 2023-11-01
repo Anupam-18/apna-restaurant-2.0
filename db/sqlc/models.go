@@ -5,9 +5,11 @@
 package repo
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 )
 
 type Menu struct {
@@ -22,6 +24,21 @@ type Menuitem struct {
 	Price    int32     `json:"price"`
 	ImageUrl string    `json:"image_url"`
 	MenuID   uuid.UUID `json:"menu_id"`
+}
+
+type Order struct {
+	ID          uuid.UUID             `json:"id"`
+	TableID     uuid.UUID             `json:"table_id"`
+	Amount      sql.NullInt32         `json:"amount"`
+	OrderItems  pqtype.NullRawMessage `json:"order_items"`
+	CreatedAt   time.Time             `json:"created_at"`
+	DeliveredAt sql.NullTime          `json:"delivered_at"`
+}
+
+type Table struct {
+	ID          uuid.UUID   `json:"id"`
+	TableNumber int32       `json:"table_number"`
+	OrderIds    []uuid.UUID `json:"order_ids"`
 }
 
 type User struct {

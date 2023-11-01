@@ -37,6 +37,8 @@ func StartApplication() {
 	AuthRoutes := routes.NewAuthRoutes(AuthController, router)
 	MenuController := controllers.NewMenuController(queries)
 	MenuRoutes := routes.NewMenuRoutes(MenuController, router)
-	mapUrls(AuthRoutes, MenuRoutes)
+	OrderController := controllers.NewOrderController(queries)
+	OrderRoutes := routes.NewOrderRoutes(OrderController, router)
+	mapUrls(AuthRoutes, MenuRoutes, OrderRoutes)
 	router.Run(":8080")
 }
