@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -34,10 +33,8 @@ func (mc *MenuController) AddMenu(c *gin.Context) {
 		Category:    menuReqBody.Category,
 		MenuItemIds: menuReqBody.MenuItemIds,
 	}
-	fmt.Println(menu)
 	insertedMenu, err := mc.db.CreateMenu(context.Background(), *menu)
 	if err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while inserting menu in db"})
 		return
 	}
@@ -47,7 +44,6 @@ func (mc *MenuController) AddMenu(c *gin.Context) {
 func (mc *MenuController) UpdateMenu(c *gin.Context) {
 	var menuReqBody *repo.Menu
 	if err := c.ShouldBindJSON(&menuReqBody); err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -111,7 +107,6 @@ func (mc *MenuController) GetMenuByID(c *gin.Context) {
 func (mc *MenuController) AddMenuItem(c *gin.Context) {
 	var menuitemReqBody *repo.Menuitem
 	if err := c.ShouldBindJSON(&menuitemReqBody); err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}

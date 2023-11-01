@@ -1,11 +1,14 @@
 package app
 
 import (
+	"log"
+
 	"apna-restaurant-2.0/controllers"
 	"apna-restaurant-2.0/db/config"
 	repo "apna-restaurant-2.0/db/sqlc"
 	"apna-restaurant-2.0/routes"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -24,6 +27,9 @@ func init() {
 }
 
 func StartApplication() {
+	if err := godotenv.Load(".env"); err != nil {
+		log.Fatal("error loading env data")
+	}
 	db := config.ConnectToDB()
 	router = gin.Default()
 	queries := repo.New(db)

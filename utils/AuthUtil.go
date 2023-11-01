@@ -45,6 +45,6 @@ func GenerateToken(userId uuid.UUID, email string) string {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), tokenClaims)
-	signedToken, _ := token.SignedString([]byte(os.Getenv("token_password")))
+	signedToken, _ := token.SignedString([]byte(os.Getenv("TOKEN_PASSWORD")))
 	return signedToken
 }

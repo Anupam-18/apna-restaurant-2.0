@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -23,7 +22,6 @@ func NewAuthController(db *repo.Queries) *AuthController {
 func (ac *AuthController) SignUpUser(c *gin.Context) {
 	var credentials *repo.User
 	if err := c.ShouldBindJSON(&credentials); err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -32,9 +30,7 @@ func (ac *AuthController) SignUpUser(c *gin.Context) {
 		return
 	}
 	existingUserCount, err := ac.db.CheckExistingUser(context.Background(), credentials.Email)
-	fmt.Println("came here")
 	if err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
