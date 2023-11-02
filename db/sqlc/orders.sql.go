@@ -212,6 +212,17 @@ func (q *Queries) GetTableByID(ctx context.Context, id uuid.UUID) (Table, error)
 	return i, err
 }
 
+const removeOrderIDFromTables = `-- name: RemoveOrderIDFromTables :exec
+UPDATE tables
+SET order_ids = array_remove(order_ids, $1)
+WHERE $1 = ANY(order_ids)
+`
+
+func (q *Queries) RemoveOrderIDFromTables(ctx context.Context, arrayRemove interface{}) error {
+	_, err := q.exec(ctx, q.removeOrderIDFromTablesStmt, removeOrderIDFromTables, arrayRemove)
+	return err
+}
+
 const updateOrder = `-- name: UpdateOrder :one
 UPDATE orders
 SET

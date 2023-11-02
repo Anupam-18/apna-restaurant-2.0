@@ -102,6 +102,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.listUsersStmt, err = db.PrepareContext(ctx, listUsers); err != nil {
 		return nil, fmt.Errorf("error preparing query ListUsers: %w", err)
 	}
+	if q.removeOrderIDFromTablesStmt, err = db.PrepareContext(ctx, removeOrderIDFromTables); err != nil {
+		return nil, fmt.Errorf("error preparing query RemoveOrderIDFromTables: %w", err)
+	}
 	if q.updateMenuStmt, err = db.PrepareContext(ctx, updateMenu); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateMenu: %w", err)
 	}
@@ -252,6 +255,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing listUsersStmt: %w", cerr)
 		}
 	}
+	if q.removeOrderIDFromTablesStmt != nil {
+		if cerr := q.removeOrderIDFromTablesStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing removeOrderIDFromTablesStmt: %w", cerr)
+		}
+	}
 	if q.updateMenuStmt != nil {
 		if cerr := q.updateMenuStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateMenuStmt: %w", cerr)
@@ -314,75 +322,77 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 }
 
 type Queries struct {
-	db                        DBTX
-	tx                        *sql.Tx
-	checkExistingMenuStmt     *sql.Stmt
-	checkExistingMenuitemStmt *sql.Stmt
-	checkExistingOrderStmt    *sql.Stmt
-	checkExistingTableStmt    *sql.Stmt
-	checkExistingUserStmt     *sql.Stmt
-	createMenuStmt            *sql.Stmt
-	createMenuitemStmt        *sql.Stmt
-	createOrderStmt           *sql.Stmt
-	createTableStmt           *sql.Stmt
-	createUserStmt            *sql.Stmt
-	deleteMenuByIDStmt        *sql.Stmt
-	deleteMenuitemStmt        *sql.Stmt
-	deleteOrderByIDStmt       *sql.Stmt
-	deleteTableByIDStmt       *sql.Stmt
-	deleteUserStmt            *sql.Stmt
-	getAllMenusStmt           *sql.Stmt
-	getAllOrdersStmt          *sql.Stmt
-	getAllTablesStmt          *sql.Stmt
-	getMenuByIDStmt           *sql.Stmt
-	getMenuitemsByIdStmt      *sql.Stmt
-	getOrderByIDStmt          *sql.Stmt
-	getTableByIDStmt          *sql.Stmt
-	getUserByEmailStmt        *sql.Stmt
-	getUserByIdStmt           *sql.Stmt
-	listMenuitemsStmt         *sql.Stmt
-	listUsersStmt             *sql.Stmt
-	updateMenuStmt            *sql.Stmt
-	updateMenuitemStmt        *sql.Stmt
-	updateOrderStmt           *sql.Stmt
-	updateTableStmt           *sql.Stmt
-	updateUserStmt            *sql.Stmt
+	db                          DBTX
+	tx                          *sql.Tx
+	checkExistingMenuStmt       *sql.Stmt
+	checkExistingMenuitemStmt   *sql.Stmt
+	checkExistingOrderStmt      *sql.Stmt
+	checkExistingTableStmt      *sql.Stmt
+	checkExistingUserStmt       *sql.Stmt
+	createMenuStmt              *sql.Stmt
+	createMenuitemStmt          *sql.Stmt
+	createOrderStmt             *sql.Stmt
+	createTableStmt             *sql.Stmt
+	createUserStmt              *sql.Stmt
+	deleteMenuByIDStmt          *sql.Stmt
+	deleteMenuitemStmt          *sql.Stmt
+	deleteOrderByIDStmt         *sql.Stmt
+	deleteTableByIDStmt         *sql.Stmt
+	deleteUserStmt              *sql.Stmt
+	getAllMenusStmt             *sql.Stmt
+	getAllOrdersStmt            *sql.Stmt
+	getAllTablesStmt            *sql.Stmt
+	getMenuByIDStmt             *sql.Stmt
+	getMenuitemsByIdStmt        *sql.Stmt
+	getOrderByIDStmt            *sql.Stmt
+	getTableByIDStmt            *sql.Stmt
+	getUserByEmailStmt          *sql.Stmt
+	getUserByIdStmt             *sql.Stmt
+	listMenuitemsStmt           *sql.Stmt
+	listUsersStmt               *sql.Stmt
+	removeOrderIDFromTablesStmt *sql.Stmt
+	updateMenuStmt              *sql.Stmt
+	updateMenuitemStmt          *sql.Stmt
+	updateOrderStmt             *sql.Stmt
+	updateTableStmt             *sql.Stmt
+	updateUserStmt              *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                        tx,
-		tx:                        tx,
-		checkExistingMenuStmt:     q.checkExistingMenuStmt,
-		checkExistingMenuitemStmt: q.checkExistingMenuitemStmt,
-		checkExistingOrderStmt:    q.checkExistingOrderStmt,
-		checkExistingTableStmt:    q.checkExistingTableStmt,
-		checkExistingUserStmt:     q.checkExistingUserStmt,
-		createMenuStmt:            q.createMenuStmt,
-		createMenuitemStmt:        q.createMenuitemStmt,
-		createOrderStmt:           q.createOrderStmt,
-		createTableStmt:           q.createTableStmt,
-		createUserStmt:            q.createUserStmt,
-		deleteMenuByIDStmt:        q.deleteMenuByIDStmt,
-		deleteMenuitemStmt:        q.deleteMenuitemStmt,
-		deleteOrderByIDStmt:       q.deleteOrderByIDStmt,
-		deleteTableByIDStmt:       q.deleteTableByIDStmt,
-		deleteUserStmt:            q.deleteUserStmt,
-		getAllMenusStmt:           q.getAllMenusStmt,
-		getAllOrdersStmt:          q.getAllOrdersStmt,
-		getAllTablesStmt:          q.getAllTablesStmt,
-		getMenuByIDStmt:           q.getMenuByIDStmt,
-		getMenuitemsByIdStmt:      q.getMenuitemsByIdStmt,
-		getOrderByIDStmt:          q.getOrderByIDStmt,
-		getTableByIDStmt:          q.getTableByIDStmt,
-		getUserByEmailStmt:        q.getUserByEmailStmt,
-		getUserByIdStmt:           q.getUserByIdStmt,
-		listMenuitemsStmt:         q.listMenuitemsStmt,
-		listUsersStmt:             q.listUsersStmt,
-		updateMenuStmt:            q.updateMenuStmt,
-		updateMenuitemStmt:        q.updateMenuitemStmt,
-		updateOrderStmt:           q.updateOrderStmt,
-		updateTableStmt:           q.updateTableStmt,
-		updateUserStmt:            q.updateUserStmt,
+		db:                          tx,
+		tx:                          tx,
+		checkExistingMenuStmt:       q.checkExistingMenuStmt,
+		checkExistingMenuitemStmt:   q.checkExistingMenuitemStmt,
+		checkExistingOrderStmt:      q.checkExistingOrderStmt,
+		checkExistingTableStmt:      q.checkExistingTableStmt,
+		checkExistingUserStmt:       q.checkExistingUserStmt,
+		createMenuStmt:              q.createMenuStmt,
+		createMenuitemStmt:          q.createMenuitemStmt,
+		createOrderStmt:             q.createOrderStmt,
+		createTableStmt:             q.createTableStmt,
+		createUserStmt:              q.createUserStmt,
+		deleteMenuByIDStmt:          q.deleteMenuByIDStmt,
+		deleteMenuitemStmt:          q.deleteMenuitemStmt,
+		deleteOrderByIDStmt:         q.deleteOrderByIDStmt,
+		deleteTableByIDStmt:         q.deleteTableByIDStmt,
+		deleteUserStmt:              q.deleteUserStmt,
+		getAllMenusStmt:             q.getAllMenusStmt,
+		getAllOrdersStmt:            q.getAllOrdersStmt,
+		getAllTablesStmt:            q.getAllTablesStmt,
+		getMenuByIDStmt:             q.getMenuByIDStmt,
+		getMenuitemsByIdStmt:        q.getMenuitemsByIdStmt,
+		getOrderByIDStmt:            q.getOrderByIDStmt,
+		getTableByIDStmt:            q.getTableByIDStmt,
+		getUserByEmailStmt:          q.getUserByEmailStmt,
+		getUserByIdStmt:             q.getUserByIdStmt,
+		listMenuitemsStmt:           q.listMenuitemsStmt,
+		listUsersStmt:               q.listUsersStmt,
+		removeOrderIDFromTablesStmt: q.removeOrderIDFromTablesStmt,
+		updateMenuStmt:              q.updateMenuStmt,
+		updateMenuitemStmt:          q.updateMenuitemStmt,
+		updateOrderStmt:             q.updateOrderStmt,
+		updateTableStmt:             q.updateTableStmt,
+		updateUserStmt:              q.updateUserStmt,
 	}
 }

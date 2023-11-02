@@ -72,3 +72,8 @@ WHERE id = $1;
 -- name: DeleteOrderByID :exec
 DELETE FROM orders
 WHERE id = $1;
+
+-- name: RemoveOrderIDFromTables :exec
+UPDATE tables
+SET order_ids = array_remove(order_ids, $1)
+WHERE $1 = ANY(order_ids);

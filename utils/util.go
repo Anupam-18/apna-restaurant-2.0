@@ -3,6 +3,7 @@ package utils
 import (
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -25,4 +26,13 @@ func IsUrlValid(URL string) bool {
 func IsValidUUID(input uuid.UUID) bool {
 	_, err := uuid.Parse(input.String())
 	return err == nil
+}
+
+func ConvertIntToUUID(value int) (uuid.UUID, error) {
+	intStr := strconv.Itoa(value)
+	uuidFromInt, err := uuid.Parse(intStr)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return uuidFromInt, nil
 }
