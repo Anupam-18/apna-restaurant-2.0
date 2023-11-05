@@ -3,11 +3,21 @@ package utils
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"encoding/json"
+	"time"
 
 	repo "apna-restaurant-2.0/db/sqlc"
 	"github.com/google/uuid"
 )
+
+type Order struct {
+	ID          uuid.UUID         `json:"id"`
+	TableID     uuid.UUID         `json:"table_id"`
+	Amount      int               `json:"amount"`
+	OrderItems  map[uuid.UUID]int `json:"order_items"`
+	CreatedAt   time.Time         `json:"created_at"`
+	DeliveredAt time.Time         `json:"delivered_at"`
+}
 
 func ValidateOrderID(id uuid.UUID, db *repo.Queries) (string, bool) {
 	orderItemCount, err := db.CheckExistingOrder(context.Background(), id)
@@ -47,26 +57,24 @@ func ValidateTableId(tableId uuid.UUID, db *repo.Queries) (string, bool) {
 	return "", true
 }
 
-func ValidateAddOrderRequest(order *repo.Order, db *repo.Queries, flag string) (string, bool) {
+func ValidateAddOrderRequest(order *Order, db *repo.Queries, flag string) (string, bool) {
 	applyFlag := flag != ""
 	if !IsValidUUID(order.ID) && applyFlag {
 		return "Missing/Invalid id", false
-	} else if resp, ok := ValidateTableId(order.TableID, db); !ok {
+	} else if !IsValidUUID(order.TableID) && !applyFlag {
+		return "Missing/Invalid tableId", false
+	} else if resp, ok := ValidateTableId(order.TableID, db); !ok && !applyFlag {
 		return resp, false
-	} else if int(order.Amount.Int32) < 0 {
+	} else if order.Amount < 0 {
 		return "Amount should be positive", false
-	} else if order.CreatedAt.IsZero() {
+	} else if order.CreatedAt.IsZero() && !applyFlag {
 		return "Created at must be a valid time", false
-	} else if order.DeliveredAt.Valid && order.CreatedAt.After(order.DeliveredAt.Time) && applyFlag {
+	} else if order.CreatedAt.After(order.DeliveredAt) && applyFlag {
 		return "Created time must be earlier than delivered time", false
 	}
 
-	for orderItem, quantity := range order.OrderItems.RawMessage {
-		orderItemId, err := ConvertIntToUUID(orderItem)
-		if err != nil {
-			return fmt.Sprintf("Invalid orderitemid %s", orderItemId), false
-		}
-		if resp, ok := ValidateMenuItem(orderItemId, db); !ok {
+	for orderItem, quantity := range order.OrderItems {
+		if resp, ok := ValidateMenuItem(orderItem, db); !ok {
 			return resp, false
 		}
 		if quantity < 0 {
@@ -76,17 +84,10 @@ func ValidateAddOrderRequest(order *repo.Order, db *repo.Queries, flag string) (
 	return "requirement passed", true
 }
 
-func CalculateOrderAmount(order *repo.Order, db *repo.Queries) (sql.NullInt32, string) {
+func CalculateOrderAmount(order *Order, db *repo.Queries) (sql.NullInt32, string) {
 	amount := 0
-	for orderItem, quantity := range order.OrderItems.RawMessage {
-		orderItemId, err := ConvertIntToUUID(orderItem)
-		if err != nil {
-			return sql.NullInt32{
-				Int32: int32(0),
-				Valid: true,
-			}, "One of orderitems has Invalid orderitem id"
-		}
-		existingOrderItem, err := db.GetMenuitemsById(context.Background(), orderItemId)
+	for orderItem, quantity := range order.OrderItems {
+		existingOrderItem, err := db.GetMenuitemsById(context.Background(), orderItem)
 		if err != nil {
 			return sql.NullInt32{
 				Int32: int32(0),
@@ -98,5 +99,12 @@ func CalculateOrderAmount(order *repo.Order, db *repo.Queries) (sql.NullInt32, s
 	return sql.NullInt32{
 		Int32: int32(amount),
 		Valid: true,
-	}, "order calculation successful"
+	}, ""
+}
+func MarshalToOrder(data json.RawMessage) (map[uuid.UUID]int, error) {
+	orderItems := make(map[uuid.UUID]int)
+	if err := json.Unmarshal(data, &orderItems); err != nil {
+		return nil, err
+	}
+	return orderItems, nil
 }

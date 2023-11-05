@@ -23,8 +23,11 @@ func (or *OrderRoutes) OrderRoute(rg *gin.RouterGroup) {
 	router.Use(middleware.Authenticate())
 	router.POST("/table/new", or.orderController.AddTable)
 	router.PATCH("/table/update", or.orderController.UpdateTable)
+	router.GET("/table/all", or.orderController.GetAllTables)
 
 	router.POST("/order/new", or.orderController.AddOrder)
+	router.GET("/order/all", or.orderController.GetAllOrders)
+
 	router.PATCH("/order/update", or.orderController.UpdateOrder)
 	router.GET("/order/:id", or.orderController.GetOrderDetails)
 	router.DELETE("/order/:id", or.orderController.CancelOrder)

@@ -25,7 +25,7 @@ func IsUrlValid(URL string) bool {
 
 func IsValidUUID(input uuid.UUID) bool {
 	_, err := uuid.Parse(input.String())
-	return err == nil
+	return input != uuid.UUID{00000000 - 0000 - 0000 - 0000 - 000000000000} && err == nil
 }
 
 func ConvertIntToUUID(value int) (uuid.UUID, error) {
